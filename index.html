@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Årshjul – NHF Region Øst</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f4f3f0; --bg3: #f0f4f8;
+    --text: #2c2c2a; --muted: #888780; --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --radius: 10px; --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1a1a18; --bg2: #242422; --bg3: #1c2028; --text: #e8e6e0; --muted: #888780; --border: rgba(255,255,255,0.13); --border2: rgba(255,255,255,0.22); }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  #app { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; }
+  #tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .tab { font-size: 13px; padding: 7px 16px; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
+  #view-roles { display: none; }
+  #wheel-wrap { width: 100%; aspect-ratio: 1; max-width: 540px; margin: 0 auto; }
+  canvas { display: block; }
+  #legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0.75rem 0 0; font-size: 11px; color: var(--muted); }
+  .leg { display: flex; align-items: center; gap: 4px; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .leg-sq  { width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0; }
+  #detail { margin: 0.75rem 0 0; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--bg); overflow: hidden; display: none; }
+  #detail-header { padding: 0.75rem 1rem 0.5rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  #detail-title { font-size: 15px; font-weight: 600; }
+  #detail-tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  #detail-desc { font-size: 13px; color: var(--muted); line-height: 1.6; padding: 0 1rem 0.75rem; }
+  #detail-roles-hdr { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 1rem 0.4rem; border-top: 1px solid var(--border); }
+  #detail-roles-list { display: flex; flex-wrap: wrap; gap: 6px; padding: 0.4rem 1rem 0.75rem; }
+  .role-chip { font-size: 12px; padding: 3px 10px; border-radius: 99px; cursor: pointer; border: 1px solid; background: none; font-family: inherit; }
+  .role-chip:hover { opacity: 0.75; }
+  #roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 10px; }
+  .role-card { border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--bg); overflow: hidden; }
+  .role-card.selected { border-width: 2px; }
+  .role-card-header { padding: 0.7rem 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .role-name { font-size: 13px; font-weight: 600; }
+  .role-tasks { display: none; padding: 0 0.9rem 0.8rem; }
+  .role-tasks.open { display: block; }
+  .ts-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin: 0.6rem 0 4px; }
+  .task-item { font-size: 12px; color: var(--muted); padding: 3px 0 3px 10px; border-left: 2px solid; line-height: 1.5; margin-bottom: 2px; }
+  .ev-item { font-size: 12px; color: var(--muted); padding: 3px 0; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; line-height: 1.4; }
+  .ev-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  #tooltip { position: fixed; background: var(--bg); border: 1px solid var(--border2); border-radius: var(--radius); padding: 7px 11px; font-size: 12px; max-width: 220px; pointer-events: none; display: none; z-index: 999; color: var(--text); line-height: 1.5; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  @media (max-width: 480px) { #app { padding: 1rem 0.75rem 2rem; } h1 { font-size: 17px; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Årshjul – Håndballklubb</h1>
+  <p class="subtitle">NHF Region Øst · Klikk på en hendelse for detaljer og ansvarlige roller</p>
+  <div id="tabs">
+    <button class="tab active" onclick="switchTab('wheel')">Årshjul</button>
+    <button class="tab" onclick="switchTab('roles')">Roller &amp; oppgaver</button>
+  </div>
+
+  <div id="view-wheel">
+    <div id="wheel-wrap"><canvas id="wheel"></canvas></div>
+    <div id="legend">
+      <span class="leg"><span class="leg-sq" style="background:#534AB7"></span>Styremøte</span>
+      <span class="leg"><span class="leg-sq" style="background:#D4537E"></span>Trener/oppmenn</span>
+      <span class="leg"><span class="leg-sq" style="background:#1D9E75"></span>Årsmøte</span>
+      <span class="leg"><span class="leg-dot" style="background:#D85A30"></span>Frist</span>
+      <span class="leg"><span class="leg-dot" style="background:#1D9E75"></span>Sesong</span>
+      <span class="leg"><span class="leg-dot" style="background:#378ADD"></span>NHF møte</span>
+      <span class="leg"><span class="leg-dot" style="background:#BA7517"></span>Turnering</span>
+      <span class="leg"><span class="leg-dot" style="background:#EF9F27"></span>Gøyballcup</span>
+    </div>
+    <div id="detail">
+      <div id="detail-header"><div id="detail-title"></div><div id="detail-tag"></div></div>
+      <div id="detail-desc"></div>
+      <div id="detail-roles-hdr">Ansvarlige roller</div>
+      <div id="detail-roles-list"></div>
+    </div>
+  </div>
+
+  <div id="view-roles"><div id="roles-grid"></div></div>
+</div>
+<div id="tooltip"></div>
+
+<script>
+const ROLES = [
+  { id:'leder', icon:'📌', name:'Leder', color:'#534AB7',
+    tasks:['Kalle inn til styremøter og lede disse','Delta på NHF Region Østs infomøter','Sikre at alle lag er påmeldt i riktig klasse og nivå','Lede sesongavslutningsmøte med evaluering','Avholde årsmøte (valg av nytt styre, budsjettgodkjenning)','Representere klubben i møter med Idrettsråd, kommune og samarbeidspartnere','Sikre at klubben følger NHFs lover, regler og verdier','Jobbe med inkludering, respekt og trivsel i klubben','Oppfølging av beslutninger og ansvarsfordeling fra styremøter']},
+  { id:'nestleder', icon:'📌', name:'Nestleder', color:'#7F77DD',
+    tasks:['Avlaste leder med møtevirksomhet – avtales mellom leder og nestleder','Tre inn som leder ved lederens fravær','Bidra i fellesoppgaver for styret']},
+  { id:'kasserer', icon:'💰', name:'Kasserer', color:'#1D9E75',
+    tasks:['Betale regninger, utlegg, godtgjørelser og dommerhonorar','Fakturere medlemmer i Spond for kontingenter, cuper osv.','Holde oversikt over lagskontoene','Sende påminnelser til lag som ikke har betalt påmeldingsavgift','Samarbeide med dommerkontakt om levering av dommerkontaktrapport','Delta i årsmøte med budsjettforslag','Oppdatere økonomisk status på styremøter']},
+  { id:'sekretaer', icon:'📝', name:'Sekretær', color:'#378ADD',
+    tasks:['Sende innkalling til styremøter (minst 1 uke før møtet)','Skrive og sende ut referat fra styremøter (senest 3 dager etter)','Skrive og sende søknader om penger (kommune, idrettsråd, sponsorer)','Sikre at ansvarsvaktordningen er på plass for arrangementer']},
+  { id:'sportslig', icon:'🏆', name:'Sportslig leder', color:'#D85A30',
+    tasks:['Sikre at alle lag er påmeldt i riktig klasse og nivå','Vurdere nivåinndeling for lag i J/G 13–20 år (nivå 1, 2 eller 3)','Kartlegge spillere og trenere for passende spilltilbud','Oppfølging av trenere (kurs, kompetanse og ressurser)','Koordinere med trenere og lagledere for arrangementer','Sikre at alle kamper er avviklet og resultater registrert','Forberede lagene for kvalifisering til 2. divisjon']},
+  { id:'dommer', icon:'👨‍⚖️', name:'Dommerkontakt', color:'#BA7517',
+    tasks:['Informere alle dommere i klubben om påmeldingsprosessen','Sørge for at alle dommere er påmeldt og godkjent','Særskilt ansvar for barnedommerne','Koordinere med dommerkontakt for dommer 1 om oppfølging','Sørge for at dommere er meldt inn til frist for dommerkvote','Levering av dommerkontaktrapport til NHF Region Øst']},
+  { id:'medlem', icon:'👥', name:'Medlemsansvarlig', color:'#D4537E',
+    tasks:['Holde medlemsoversikten i Spond oppdatert','Sikre at alle spillere er meldt inn til Norges Idrettsforbund','Oppfølging av politiattester for trenere, lagledere og andre som jobber med barn/unge','Samarbeide med sportslig leder for å sikre at alle spillere er i riktige lag']},
+  { id:'arrangement', icon:'🎪', name:'Arrangement', color:'#888780',
+    tasks:['Ansvarlig for alle arrangement i klubben (unntatt cuper under cupansvarlig)','Koordinere hall, utstyr og frivillige til arrangementer','Sikre at ansvarsvakt er på plass']},
+];
+const roleMap = Object.fromEntries(ROLES.map(r=>[r.id,r]));
+
+const CC = { deadline:'#D85A30',season:'#1D9E75',meeting:'#378ADD',tournament:'#BA7517',clubcup:'#EF9F27',board:'#534AB7',club_coaches:'#D4537E',agm:'#1D9E75' };
+const CL = { deadline:'Frist',season:'Sesong',meeting:'NHF møte',tournament:'Turnering',clubcup:'Gøyballcup',board:'Styremøte',club_coaches:'Trener/oppmenn-møte',agm:'Årsmøte' };
+const MN = ['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des'];
+const BOARD_M = [0,1,2,3,4,8,9,10,11];
+const SUMMER_M = [5,6,7];
+const HOLIDAY_M = [9,1];
+
+const BOARD_EV = { label:'Styremøte', cat:'board', desc:'Første mandag hver måned (september–mai): ordinært styremøte. Sekretær sender innkalling minst 1 uke før og referat senest 3 dager etter møtet.', roles:['leder','nestleder','kasserer','sekretaer','sportslig','dommer','medlem','arrangement'] };
+
+const CLUB_EV = [
+  { month:8, label:'Møte trenere & oppmenn', cat:'club_coaches', desc:'Klubbinternt møte med trenere og oppmenn tidlig i september, rett etter sesongstart. Gjennomgang av sesongens planer, forventninger, kommunikasjon og rutiner.', roles:['leder','sportslig','arrangement'] },
+  { month:3, label:'Årsmøte', cat:'agm', desc:'Klubbens årsmøte i april. Gjennomgang av regnskap, årsmelding, valg av styre og fastsettelse av kontingent for kommende år.', roles:['leder','nestleder','kasserer','sekretaer'] },
+];
+
+const NHF_EV = [
+  { month:2, label:'NHF infomøter vår', cat:'meeting', desc:'NHF Region Øst inviterer til vårlige infomøter for styreledere, sportslige ledere og daglige ledere i mars. Gjennomgang av spillmodeller og planlegging for kommende sesong.', roles:['leder','sportslig'] },
+  { month:2, label:'Dommerkontakt – frist 1. apr', cat:'deadline', desc:'Dommerkontakt må sendes til ron@handball.no innen 1. april.', roles:['dommer'] },
+  { month:3, label:'Påmeldingsfrist lag – 1. mai', cat:'deadline', desc:'Påmeldingsfrist 1. mai kl. 23:59 for alle lag i regionsserien. Etter fristen kan påmelding endres innen 6. mai.', roles:['leder','sportslig','kasserer'] },
+  { month:3, label:'Sjekk påmeldingsliste', cat:'deadline', desc:'Etter 1. mai publiseres total påmelding. Alle bør verifisere at egne lag er i riktig klasse og nivå.', roles:['sportslig','leder','medlem'] },
+  { month:4, label:'Søknadsfrist Håndballskolen – 2. jun', cat:'deadline', desc:'Søknadsfrist 2. juni for REMA 1000 Håndballskolen – gi barna en uforglemmelig høstferie.', roles:['leder','arrangement'] },
+  { month:4, label:'Treningstid sendes inn – 1. jul', cat:'deadline', desc:'Frist 1. juli: innmelding av treningstid på hverdager for hjemmekamper til NHF Region Øst.', roles:['sportslig','leder'] },
+  { month:5, label:'Fri omberamming – 12.–30. jun', cat:'deadline', desc:'Fri omberamming via TurneringsAdmin. i perioden 12.–30. juni. Etter fristen påløper administrasjonsgebyr.', roles:['sportslig'] },
+  { month:7, label:'Terminlister publiseres – 15. aug', cat:'season', desc:'Kampoppsett publiseres 15. august. Lagene bør gjennomgå terminlisten og omberamme kollisjoner umiddelbart.', roles:['sportslig','leder'] },
+  { month:7, label:'NHF infomøter høst – J/G 9–12', cat:'meeting', desc:'NHF infomøter for J/G 9–12 år: 2., 3., 7. og 8. september kl. 19:30–20:45.', roles:['sportslig'] },
+  { month:7, label:'NHF infomøter høst – J/G 13+', cat:'meeting', desc:'NHF infomøter for J/G 13 år og oppover: 2., 3., 7. og 8. september kl. 18:00–19:15.', roles:['sportslig','leder'] },
+  { month:7, label:'Seriestart – uke 36', cat:'season', desc:'Regionserien starter i uke 36 (ca. 31. august). Noen klasser starter noe senere – sjekk terminlisten.', roles:['sportslig','leder','kasserer'] },
+  { month:7, label:'NHF infomøter 4-er-håndball', cat:'meeting', desc:'NHF infomøter for J/G 6–8 år (4-er-håndball): 8. og 12. oktober kl. 18:00, 13. oktober kl. 19:30.', roles:['sportslig'] },
+  { month:9, label:'Høstferie – spillefri uke 40', cat:'season', desc:'Høstferie uke 40 (28. sept – 4. okt). Regionserien har spillefri. Enkelte avdelinger spiller 26.–27. september.', roles:['leder','sportslig'] },
+  { month:1, label:'Vinterferie – spillefri uke 8', cat:'season', desc:'Vinterferie uke 8 (ca. 15.–21. februar). Regionserien har spillefri. I tillegg spillefri 13.–14. februar i de fleste avdelinger.', roles:['leder','sportslig'] },
+  { month:2, label:'Serieslutt – 25. apr', cat:'season', desc:'Regionserien avsluttes 25. april. Noen klasser avslutter tidligere – se terminlisten.', roles:['sportslig','leder'] },
+];
+
+const TOURN_EV = [
+  { month:10, label:'Gøyballcup', cat:'clubcup', desc:'Klubbens egen Gøyballcup i november, før jul. Et sosialt arrangement for spillere og familier.', roles:['arrangement','sportslig','kasserer'] },
+  { month:9,  label:'Loppetassen – runder okt–apr', cat:'tournament', desc:'Loppetassen og Minirunder for J/G 6–8 år fra oktober til april. Påmelding åpner 6. august – sjekk kalender for enkeltfrister.', roles:['sportslig','arrangement'] },
+  { month:9,  label:'Hjerteligaen – okt–apr', cat:'tournament', desc:'REMA 1000 Hjerteligaen (tilrettelagt håndball, MIX-klasse) spilles i fem runder fra oktober til april.', roles:['sportslig','arrangement'] },
+  { month:2,  label:'Flyballturnering – april', cat:'tournament', desc:'Flyballturnering for J/G 12–16 år arrangeres lørdag i april.', roles:['sportslig','arrangement'] },
+];
+
+const ALL_EV = [...CLUB_EV,...NHF_EV,...TOURN_EV];
+let selectedRole = null;
+let builtRoles = false;
+const canvas = document.getElementById('wheel');
+const tip = document.getElementById('tooltip');
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='wheel')||(i===1&&tab==='roles')));
+  document.getElementById('view-wheel').style.display=tab==='wheel'?'block':'none';
+  document.getElementById('view-roles').style.display=tab==='roles'?'block':'none';
+  if(tab==='roles') buildRolesView();
+}
+
+function buildRolesView() {
+  if(builtRoles)return; builtRoles=true;
+  const grid=document.getElementById('roles-grid');
+  ROLES.forEach(role=>{
+    const myEvs=[BOARD_EV,...ALL_EV].filter(e=>e.roles.includes(role.id));
+    const card=document.createElement('div');
+    card.className='role-card'; card.id='card-'+role.id;
+    card.style.borderColor=role.color+'44';
+    card.innerHTML=`
+      <div class="role-card-header" style="background:${role.color}11" onclick="toggleRole('${role.id}')">
+        <span style="font-size:15px">${role.icon}</span>
+        <span class="role-name" style="color:${role.color}">${role.name}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted)">${myEvs.length} hdl. ▾</span>
+      </div>
+      <div class="role-tasks" id="tasks-${role.id}">
+        <div class="ts-title" style="color:${role.color}">Oppgaver</div>
+        ${role.tasks.map(t=>`<div class="task-item" style="border-color:${role.color}55">${t}</div>`).join('')}
+        <div class="ts-title" style="color:${role.color}">Hendelser i årshjulet</div>
+        ${myEvs.map(e=>`<div class="ev-item"><span class="ev-dot" style="background:${CC[e.cat]}"></span>${e.label}</div>`).join('')}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function toggleRole(id) {
+  const panel=document.getElementById('tasks-'+id);
+  const card=document.getElementById('card-'+id);
+  const role=roleMap[id];
+  const wasOpen=panel.classList.contains('open');
+  document.querySelectorAll('.role-tasks').forEach(p=>p.classList.remove('open'));
+  document.querySelectorAll('.role-card').forEach(c=>{ c.classList.remove('selected'); const r=roleMap[c.id.replace('card-','')]; if(r)c.style.borderColor=r.color+'44'; });
+  if(!wasOpen){ panel.classList.add('open'); card.classList.add('selected'); card.style.borderColor=role.color; }
+  selectedRole=wasOpen?null:id;
+  draw();
+}
+
+function showDetail(ev) {
+  document.getElementById('detail').style.display='block';
+  document.getElementById('detail-title').textContent=ev.label;
+  const tag=document.getElementById('detail-tag'), c=CC[ev.cat]||'#888';
+  tag.textContent=CL[ev.cat]||'';
+  tag.style.cssText=`background:${c}22;color:${c};border:1px solid ${c}55;font-size:11px;padding:2px 8px;border-radius:99px`;
+  document.getElementById('detail-desc').textContent=ev.desc;
+  const list=document.getElementById('detail-roles-list'); list.innerHTML='';
+  (ev.roles||[]).forEach(rid=>{
+    const role=roleMap[rid]; if(!role)return;
+    const chip=document.createElement('button');
+    chip.className='role-chip'; chip.textContent=role.icon+' '+role.name;
+    chip.style.cssText=`background:${role.color}18;color:${role.color};border-color:${role.color}55`;
+    chip.onclick=()=>{ switchTab('roles'); buildRolesView(); toggleRole(rid); setTimeout(()=>document.getElementById('card-'+rid).scrollIntoView({behavior:'smooth',block:'nearest'}),50); };
+    list.appendChild(chip);
+  });
+}
+
+function alpha(ev) { return(!selectedRole||(ev.roles||[]).includes(selectedRole))?1:0.1; }
+
+function draw() {
+  const size=canvas.parentElement.clientWidth;
+  canvas.width=size*devicePixelRatio; canvas.height=size*devicePixelRatio;
+  canvas.style.width=size+'px'; canvas.style.height=size+'px';
+  const ctx=canvas.getContext('2d'); ctx.scale(devicePixelRatio,devicePixelRatio);
+  const cx=size/2,cy=size/2,R=size*0.47;
+  const rLb=R*0.885,r3o=R*0.82,r3i=R*0.655,r2o=R*0.632,r2i=R*0.465,r1o=R*0.44,r1i=R*0.27;
+  const dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc=dark?'#e8e6e0':'#2c2c2a', mc=dark?'#666':'#888', bc=dark?'#1a1a18':'#fff', brc=dark?'rgba(255,255,255,0.13)':'rgba(0,0,0,0.12)';
+  ctx.clearRect(0,0,size,size);
+
+  for(let m=0;m<12;m++){
+    const a0=(m/12)*Math.PI*2-Math.PI/2,a1=((m+1)/12)*Math.PI*2-Math.PI/2,am=(a0+a1)/2;
+    const iS=SUMMER_M.includes(m),iH=HOLIDAY_M.includes(m);
+    const fl=iS?(dark?'#221e14':'#fff8ee'):iH?(dark?'#1c2028':'#eef4fb'):(m%2===0?(dark?'#242422':'#f4f3f0'):(dark?'#1e1e1c':'#fff'));
+    ctx.beginPath(); ctx.moveTo(cx+r3o*Math.cos(a0),cy+r3o*Math.sin(a0));
+    ctx.arc(cx,cy,R,a0,a1); ctx.arc(cx,cy,r3o,a1,a0,true); ctx.closePath();
+    ctx.fillStyle=fl; ctx.fill(); ctx.strokeStyle=brc; ctx.lineWidth=0.5; ctx.stroke();
+    const tx=cx+rLb*Math.cos(am),ty=cy+rLb*Math.sin(am);
+    ctx.save(); ctx.translate(tx,ty); ctx.rotate(am+Math.PI/2);
+    ctx.font=`600 ${size*0.028}px -apple-system,sans-serif`;
+    ctx.fillStyle=iS?'#BA7517':iH?'#378ADD':tc;
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(MN[m],0,0); ctx.restore();
+  }
+
+  [[r3o,r3i,'#BA7517'],[r2o,r2i,'#378ADD'],[r1o,r1i,'#534AB7']].forEach(([ro,ri,c])=>{
+    ctx.beginPath(); ctx.arc(cx,cy,ro,0,Math.PI*2); ctx.arc(cx,cy,ri,0,Math.PI*2,true);
+    ctx.fillStyle=c+(dark?'0a':'07'); ctx.fill();
+  });
+  [r3o,r3i,r2o,r2i,r1o,r1i].forEach((r,i)=>{
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle=brc; ctx.lineWidth=i%2?0.5:0.9; ctx.setLineDash(i%2?[3,4]:[]);
+    ctx.stroke(); ctx.setLineDash([]);
+  });
+
+  ctx.beginPath(); ctx.arc(cx,cy,r1i,0,Math.PI*2); ctx.fillStyle=bc; ctx.fill(); ctx.strokeStyle=brc; ctx.lineWidth=1; ctx.stroke();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font=`600 ${size*0.026}px -apple-system,sans-serif`; ctx.fillStyle=tc;
+  ctx.fillText('NHF',cx,cy-size*0.022); ctx.fillText('Region Øst',cx,cy+size*0.014);
+  ctx.font=`400 ${size*0.018}px -apple-system,sans-serif`; ctx.fillStyle=mc;
+  ctx.fillText('Årshjul',cx,cy+size*0.048);
+
+  [[(r1o+r1i)/2,'Klubb','#534AB7'],[(r2o+r2i)/2,'NHF','#185FA5'],[(r3o+r3i)/2,'Turneringer','#854F0B']].forEach(([r,t,c])=>{
+    const a=-Math.PI/2+0.22; ctx.save(); ctx.translate(cx+r*Math.cos(a),cy+r*Math.sin(a)); ctx.rotate(a+Math.PI/2);
+    ctx.font=`500 ${size*0.016}px -apple-system,sans-serif`; ctx.fillStyle=c; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t,0,0); ctx.restore();
+  });
+
+  canvas._hitTargets=[];
+
+  BOARD_M.forEach(m=>{
+    const am=(m/12)*Math.PI*2-Math.PI/2+Math.PI/12,r=(r1o+r1i)/2;
+    const x=cx+r*Math.cos(am),y=cy+r*Math.sin(am),sq=size*0.018,a=alpha(BOARD_EV);
+    ctx.save(); ctx.globalAlpha=a; ctx.translate(x,y); ctx.rotate(am);
+    ctx.fillStyle='#534AB7'; ctx.beginPath(); ctx.rect(-sq/2,-sq/2,sq,sq); ctx.fill(); ctx.restore();
+    canvas._hitTargets.push({x,y,r:sq+8,ev:{...BOARD_EV,label:`Styremøte – ${MN[m]}`}});
+  });
+
+  placeRing(ctx,cx,cy,CLUB_EV,r1o,r1i);
+  placeRing(ctx,cx,cy,NHF_EV,r2o,r2i);
+  placeRing(ctx,cx,cy,TOURN_EV,r3o,r3i);
+}
+
+function placeRing(ctx,cx,cy,evs,ro,ri) {
+  const mr=(ro+ri)/2,byM={};
+  evs.forEach(e=>{ const k=((e.month-1)+12)%12; if(!byM[k])byM[k]=[]; byM[k].push(e); });
+  Object.entries(byM).forEach(([m,list])=>{
+    const a0=(parseInt(m)/12)*Math.PI*2-Math.PI/2,span=Math.PI*2/12;
+    list.forEach((ev,i)=>{
+      const angle=a0+span*(i+0.5)/list.length,x=cx+mr*Math.cos(angle),y=cy+mr*Math.sin(angle),dr=size*0.020,a=alpha(ev);
+      ctx.save(); ctx.globalAlpha=a;
+      if(ev.cat==='agm'||ev.cat==='club_coaches'){
+        ctx.translate(x,y); ctx.rotate(angle); ctx.fillStyle=CC[ev.cat];
+        ctx.beginPath(); ctx.rect(-dr/1.2,-dr/1.2,dr/0.6,dr/0.6); ctx.fill();
+      } else if(ev.cat==='clubcup'){
+        ctx.translate(x,y); ctx.beginPath();
+        for(let s=0;s<10;s++){const r2=s%2===0?dr*1.2:dr*0.48,ag=(s*Math.PI/5)-Math.PI/2;s===0?ctx.moveTo(r2*Math.cos(ag),r2*Math.sin(ag)):ctx.lineTo(r2*Math.cos(ag),r2*Math.sin(ag));}
+        ctx.closePath(); ctx.fillStyle=CC[ev.cat]; ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(x,y,dr,0,Math.PI*2); ctx.fillStyle=CC[ev.cat]; ctx.fill();
+      }
+      ctx.restore();
+      canvas._hitTargets.push({x,y,r:dr+8,ev});
+    });
+  });
+}
+
+canvas.addEventListener('mousemove',e=>{
+  if(!canvas._hitTargets)return;
+  const rect=canvas.getBoundingClientRect(),sx=(canvas.width/devicePixelRatio)/rect.width,sy=(canvas.height/devicePixelRatio)/rect.height;
+  const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;
+  let found=null;
+  for(const t of canvas._hitTargets){if(Math.hypot(mx-t.x,my-t.y)<t.r){found=t.ev;break;}}
+  if(found){
+    tip.style.display='block'; tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY-10)+'px';
+    const rc=(found.roles||[]).map(id=>roleMap[id]?.name).filter(Boolean).join(', ');
+    tip.innerHTML=`<strong style="color:${CC[found.cat]||'#888'}">${CL[found.cat]||''}</strong><br>${found.label}${rc?`<br><span style="color:var(--muted);font-size:11px">${rc}</span>`:''}`;
+    canvas.style.cursor='pointer';
+  } else { tip.style.display='none'; canvas.style.cursor='default'; }
+});
+canvas.addEventListener('mouseleave',()=>tip.style.display='none');
+canvas.addEventListener('click',e=>{
+  if(!canvas._hitTargets)return;
+  const rect=canvas.getBoundingClientRect(),sx=(canvas.width/devicePixelRatio)/rect.width,sy=(canvas.height/devicePixelRatio)/rect.height;
+  const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;
+  for(const t of canvas._hitTargets){if(Math.hypot(mx-t.x,my-t.y)<t.r){showDetail(t.ev);break;}}
+});
+draw();
+window.addEventListener('resize',draw);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+</script>
+</body>
+</html>
