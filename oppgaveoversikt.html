@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oppgaveoversikt – NHF Region Øst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --text: #1a1a18; --muted: #888780;
+    --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
+    --hover: rgba(83,74,183,0.04);
+    --rad: 8px; --rad-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1a1a18; --text: #e8e6e0; --muted: #888780; --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18); --hover: rgba(83,74,183,0.08); }
+  }
+  body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  #app { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  header { margin-bottom: 1.75rem; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: var(--muted); }
+
+  /* Filters */
+  #filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+  .filter-btn {
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+    padding: 4px 12px; border-radius: 99px; border: 1.5px solid;
+    cursor: pointer; background: none; letter-spacing: 0.02em; transition: all 0.15s;
+  }
+  .filter-btn:not(.active) { opacity: 0.45; }
+  .filter-btn.active { color: #fff !important; }
+
+  /* Search */
+  #search-wrap { position: relative; margin-bottom: 0.75rem; }
+  #search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: 0.4; pointer-events: none; }
+  #search {
+    width: 100%; padding: 9px 12px 9px 34px;
+    border: 1px solid var(--border2); border-radius: var(--rad);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    background: var(--bg); color: var(--text); outline: none;
+    transition: border-color 0.15s;
+  }
+  #search:focus { border-color: #534AB7; }
+
+  /* Count */
+  #count { font-size: 12px; color: var(--muted); margin-bottom: 0.6rem; }
+
+  /* Table */
+  #table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--rad-lg); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted);
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border2);
+    white-space: nowrap; cursor: pointer; user-select: none;
+    background: var(--bg);
+  }
+  thead th:hover { color: var(--text); }
+  .sort-icon { margin-left: 4px; opacity: 0.35; font-size: 10px; }
+  thead th.sorted .sort-icon { opacity: 1; }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--hover); }
+  td { padding: 10px 14px; font-size: 13px; vertical-align: middle; }
+
+  .cat-pill {
+    display: inline-flex; align-items: center;
+    font-size: 11px; font-weight: 500; padding: 2px 8px;
+    border-radius: 99px; white-space: nowrap; border: 1px solid;
+  }
+  .month-cell {
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+    padding: 3px 8px; border-radius: 5px; white-space: nowrap; display: inline-block;
+    background: rgba(0,0,0,0.05); color: var(--muted);
+  }
+  @media (prefers-color-scheme: dark) {
+    .month-cell { background: rgba(255,255,255,0.08); }
+  }
+  .task-name { font-weight: 500; }
+  .task-desc { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 400; }
+  .roles-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+  .role-badge {
+    font-size: 11px; padding: 2px 7px; border-radius: 99px;
+    border: 1px solid; white-space: nowrap;
+  }
+  #empty { text-align: center; padding: 2.5rem; font-size: 13px; color: var(--muted); display: none; }
+
+  @media (max-width: 600px) {
+    td { padding: 8px 10px; }
+    thead th { padding: 8px 10px; }
+    #app { padding: 1.25rem 0.75rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Oppgaveoversikt</h1>
+    <p class="sub">NHF Region Øst · Alle oppgaver, frister og ansvarlige roller</p>
+  </header>
+
+  <div id="filters"></div>
+  <div id="search-wrap">
+    <span id="search-icon">🔍</span>
+    <input id="search" type="text" placeholder="Søk etter oppgave, måned eller rolle…">
+  </div>
+  <div id="count"></div>
+  <div id="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('cat')" id="th-cat">Kategori <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('label')" id="th-label">Oppgave <span class="sort-icon">↕</span></th>
+          <th onclick="sortBy('month')" id="th-month">Måned <span class="sort-icon">↕</span></th>
+          <th>Ansvarlig(e)</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty">Ingen oppgaver matcher søket ditt.</div>
+  </div>
+</div>
+
+<script>
+const ROLES = {
+  leder:       { name:'Leder',            icon:'📌', color:'#534AB7' },
+  nestleder:   { name:'Nestleder',        icon:'📌', color:'#7F77DD' },
+  kasserer:    { name:'Kasserer',         icon:'💰', color:'#1D9E75' },
+  sekretaer:   { name:'Sekretær',         icon:'📝', color:'#378ADD' },
+  sportslig:   { name:'Sportslig leder',  icon:'🏆', color:'#D85A30' },
+  dommer:      { name:'Dommerkontakt',    icon:'👨‍⚖️', color:'#BA7517' },
+  medlem:      { name:'Medlemsansvarlig', icon:'👥', color:'#D4537E' },
+  arrangement: { name:'Arrangement',      icon:'🎪', color:'#888780' },
+};
+
+const CATS = {
+  board:        { label:'Styremøte',       color:'#534AB7' },
+  club_coaches: { label:'Trener/oppmenn',  color:'#D4537E' },
+  agm:          { label:'Årsmøte',         color:'#1D9E75' },
+  deadline:     { label:'Frist',           color:'#D85A30' },
+  season:       { label:'Sesong',          color:'#1D9E75' },
+  meeting:      { label:'NHF møte',        color:'#378ADD' },
+  tournament:   { label:'Turnering',       color:'#BA7517' },
+  clubcup:      { label:'Gøyballcup',      color:'#EF9F27' },
+};
+
+const MN  = ['Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
+const MNS = ['Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des'];
+const ALL_ROLES = ['leder','nestleder','kasserer','sekretaer','sportslig','dommer','medlem','arrangement'];
+
+const ROWS = [];
+
+// Styremøter – første mandag sep–mai
+[0,1,2,3,4,8,9,10,11].forEach(m => {
+  ROWS.push({ cat:'board', label:`Styremøte – ${MN[m]}`, month:m, roles: ALL_ROLES,
+    desc:'Første mandag i måneden. Sekretær sender innkalling 1 uke før og referat 3 dager etter.' });
+});
+
+// Øvrige hendelser
+[
+  { cat:'club_coaches', label:'Møte trenere & oppmenn',              month:8,  roles:['leder','sportslig','arrangement'],         desc:'Tidlig september, rett etter sesongstart.' },
+  { cat:'agm',          label:'Årsmøte',                             month:3,  roles:['leder','nestleder','kasserer','sekretaer'], desc:'Gjennomgang av regnskap, årsmelding, valg av styre og kontingent.' },
+  { cat:'meeting',      label:'NHF infomøter vår',                   month:2,  roles:['leder','sportslig'],                       desc:'Mars – spillmodeller og planlegging kommende sesong.' },
+  { cat:'deadline',     label:'Dommerkontakt – frist 1. april',      month:2,  roles:['dommer'],                                  desc:'Sendes til ron@handball.no innen 1. april.' },
+  { cat:'deadline',     label:'Påmeldingsfrist lag – 1. mai',        month:3,  roles:['leder','sportslig','kasserer'],             desc:'Frist kl. 23:59. Endringer mulig innen 6. mai.' },
+  { cat:'deadline',     label:'Sjekk påmeldingsliste',               month:3,  roles:['sportslig','leder','medlem'],               desc:'Verifiser at alle lag er i riktig klasse og nivå.' },
+  { cat:'deadline',     label:'Søknadsfrist Håndballskolen – 2. jun',month:4,  roles:['leder','arrangement'],                     desc:'REMA 1000 Håndballskolen.' },
+  { cat:'deadline',     label:'Treningstid sendes inn – 1. juli',    month:4,  roles:['sportslig','leder'],                       desc:'Innmelding av treningstid på hverdager for hjemmekamper.' },
+  { cat:'deadline',     label:'Fri omberamming – 12.–30. juni',      month:5,  roles:['sportslig'],                               desc:'Via TurneringsAdmin. Gebyr etter fristen.' },
+  { cat:'season',       label:'Terminlister publiseres – 15. august',month:7,  roles:['sportslig','leder'],                       desc:'Gjennomgå og omberamme kollisjoner umiddelbart.' },
+  { cat:'season',       label:'Seriestart – uke 36',                 month:8,  roles:['sportslig','leder','kasserer'],             desc:'Ca. 31. august. Noen klasser starter noe senere.' },
+  { cat:'meeting',      label:'NHF infomøter høst – J/G 13+',       month:8,  roles:['sportslig','leder'],                       desc:'2., 3., 7. og 8. september kl. 18:00–19:15.' },
+  { cat:'meeting',      label:'NHF infomøter høst – J/G 9–12',      month:8,  roles:['sportslig'],                               desc:'2., 3., 7. og 8. september kl. 19:30–20:45.' },
+  { cat:'season',       label:'Høstferie – spillefri uke 40',        month:9,  roles:['leder','sportslig'],                       desc:'28. sept – 4. okt. Spillefri i regionsserien.' },
+  { cat:'meeting',      label:'NHF infomøter 4-er-håndball',         month:9,  roles:['sportslig'],                               desc:'8. og 12. oktober kl. 18:00, 13. oktober kl. 19:30.' },
+  { cat:'season',       label:'Vinterferie – spillefri uke 8',       month:1,  roles:['leder','sportslig'],                       desc:'Ca. 15.–21. februar. Spillefri 13.–14. feb. i de fleste avdelinger.' },
+  { cat:'season',       label:'Serieslutt – 25. april',              month:3,  roles:['sportslig','leder'],                       desc:'Noen klasser avslutter tidligere – sjekk terminlisten.' },
+  { cat:'tournament',   label:'Loppetassen – runder okt–apr',        month:9,  roles:['sportslig','arrangement'],                 desc:'Påmelding åpner 6. august. Sjekk kalender for enkeltfrister.' },
+  { cat:'tournament',   label:'Hjerteligaen – okt–apr',              month:9,  roles:['sportslig','arrangement'],                 desc:'REMA 1000 Hjerteligaen, MIX-klasse, fem runder.' },
+  { cat:'clubcup',      label:'Gøyballcup',                          month:10, roles:['arrangement','sportslig','kasserer'],       desc:'November, før jul. Sosialt arrangement for spillere og familier.' },
+  { cat:'tournament',   label:'Flyballturnering – april',            month:3,  roles:['sportslig','arrangement'],                 desc:'J/G 12–16 år, lørdag i april.' },
+].forEach(e => ROWS.push(e));
+
+// State
+let sortCol = 'month', sortDir = 1, activeFilter = 'all', searchTerm = '';
+
+// Filter bar
+const filterDefs = [
+  { id:'all',                   label:'Alle',         color:'#534AB7' },
+  { id:'board',                 label:'Styremøter',   color:'#534AB7' },
+  { id:'deadline',              label:'Frister',      color:'#D85A30' },
+  { id:'season',                label:'Sesong',       color:'#1D9E75' },
+  { id:'meeting',               label:'NHF møter',    color:'#378ADD' },
+  { id:'tournament,clubcup',    label:'Turneringer',  color:'#BA7517' },
+  { id:'agm,club_coaches',      label:'Klubbmøter',   color:'#D4537E' },
+];
+
+const filterBar = document.getElementById('filters');
+filterDefs.forEach(f => {
+  const btn = document.createElement('button');
+  btn.className = 'filter-btn' + (f.id === 'all' ? ' active' : '');
+  btn.textContent = f.label;
+  btn.style.borderColor = f.color;
+  btn.style.color = f.id === 'all' ? '#fff' : f.color;
+  if (f.id === 'all') btn.style.background = f.color;
+  btn.dataset.id = f.id;
+  btn.dataset.color = f.color;
+  btn.onclick = () => {
+    activeFilter = f.id;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('active');
+      b.style.background = 'none';
+      b.style.color = b.dataset.color;
+    });
+    btn.classList.add('active');
+    btn.style.background = f.color;
+    btn.style.color = '#fff';
+    render();
+  };
+  filterBar.appendChild(btn);
+});
+
+function matchesFilter(row) {
+  if (activeFilter === 'all') return true;
+  return activeFilter.split(',').includes(row.cat);
+}
+function matchesSearch(row) {
+  if (!searchTerm) return true;
+  const s = searchTerm.toLowerCase();
+  const roleNames = (row.roles || []).map(id => ROLES[id]?.name || '').join(' ').toLowerCase();
+  return row.label.toLowerCase().includes(s) ||
+         (CATS[row.cat]?.label || '').toLowerCase().includes(s) ||
+         MN[row.month].toLowerCase().includes(s) ||
+         roleNames.includes(s);
+}
+function sortedRows() {
+  return [...ROWS].sort((a, b) => {
+    let va, vb;
+    if (sortCol === 'month')      { va = a.month; vb = b.month; }
+    else if (sortCol === 'cat')   { va = CATS[a.cat]?.label || ''; vb = CATS[b.cat]?.label || ''; }
+    else if (sortCol === 'label') { va = a.label; vb = b.label; }
+    if (va < vb) return -sortDir;
+    if (va > vb) return sortDir;
+    return 0;
+  });
+}
+
+function render() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  let visible = 0;
+
+  sortedRows().forEach(row => {
+    if (!matchesFilter(row) || !matchesSearch(row)) return;
+    visible++;
+    const cat = CATS[row.cat] || { label: row.cat, color: '#888' };
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="cat-pill" style="background:${cat.color}18;color:${cat.color};border-color:${cat.color}33">${cat.label}</span></td>
+      <td style="min-width:180px">
+        <div class="task-name">${row.label}</div>
+        <div class="task-desc">${row.desc || ''}</div>
+      </td>
+      <td><span class="month-cell">${MNS[row.month]}</span></td>
+      <td>
+        <div class="roles-cell">
+          ${(row.roles || []).map(id => {
+            const r = ROLES[id]; if (!r) return '';
+            return `<span class="role-badge" style="color:${r.color};border-color:${r.color}44;background:${r.color}10">${r.icon} ${r.name}</span>`;
+          }).join('')}
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('count').textContent = `${visible} oppgaver`;
+  document.getElementById('empty').style.display = visible === 0 ? 'block' : 'none';
+
+  ['cat','label','month'].forEach(col => {
+    const th = document.getElementById('th-' + col);
+    if (!th) return;
+    th.classList.toggle('sorted', sortCol === col);
+    th.querySelector('.sort-icon').textContent = sortCol === col ? (sortDir === 1 ? '↑' : '↓') : '↕';
+  });
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  render();
+}
+
+document.getElementById('search').addEventListener('input', e => {
+  searchTerm = e.target.value;
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
