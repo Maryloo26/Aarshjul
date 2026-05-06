@@ -166,6 +166,7 @@ function switchTab(t){
   document.getElementById('view-wheel').style.display=t==='wheel'?'block':'none';
   document.getElementById('view-roles').style.display=t==='roles'?'block':'none';
   if(t==='roles') buildRoles();
+  if(t==='wheel') requestAnimationFrame(()=>requestAnimationFrame(draw));
 }
 
 function buildRoles(){
