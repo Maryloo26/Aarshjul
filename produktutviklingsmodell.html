@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produktutviklingsmodell</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff;
+      --text: #1a1a18;
+      --muted: #66655f;
+      --border: rgba(0,0,0,0.12);
+      --accent: #534AB7;
+      --ok: #1D9E75;
+      --warn: #BA7517;
+      --stop: #D85A30;
+      --rad: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a18;
+        --text: #e8e6e0;
+        --muted: #aaa89f;
+        --border: rgba(255,255,255,0.16);
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    #app {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+    .top-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .top-links a {
+      font-size: 12px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--text);
+    }
+    h1 { font-size: 26px; margin-bottom: 8px; }
+    .lead { color: var(--muted); margin-bottom: 1.25rem; }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--rad);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: var(--bg);
+    }
+    h2 { font-size: 18px; margin-bottom: .7rem; }
+    h3 { font-size: 15px; margin: .7rem 0 .35rem; }
+    ul, ol { padding-left: 1.1rem; }
+    li + li { margin-top: .3rem; }
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 10px;
+      margin-top: .5rem;
+    }
+    .phase {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .7rem .8rem;
+    }
+    .gate {
+      margin-top: .6rem;
+      font-size: 12px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      border-radius: 999px;
+      padding: 2px 8px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .pill-go { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 55%, transparent); background: color-mix(in srgb, var(--ok) 16%, transparent); }
+    .pill-adjust { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); background: color-mix(in srgb, var(--warn) 16%, transparent); }
+    .pill-stop { color: var(--stop); border-color: color-mix(in srgb, var(--stop) 55%, transparent); background: color-mix(in srgb, var(--stop) 16%, transparent); }
+    .agenda {
+      border-left: 3px solid var(--accent);
+      padding-left: .8rem;
+      margin-top: .5rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="top-links">
+      <a href="./index.html">Årshjul</a>
+      <a href="./oppgaveoversikt.html">Oppgaveoversikt</a>
+    </div>
+
+    <h1>Produktutviklingsmodell</h1>
+    <p class="lead">Felles ramme for utvikling, styring og budsjett – med læring som hovedfokus før store beslutninger.</p>
+
+    <section class="card">
+      <h2>1) Modenhetsskala med beslutningspunkter</h2>
+      <div class="phase-grid">
+        <div class="phase"><h3>Forstå problem</h3><p>Avklar problemet, behovet, hvem som berøres og ønsket effekt.</p></div>
+        <div class="phase"><h3>Utforske</h3><p>Kartlegg alternative løsningsretninger og hva som må læres før videre valg.</p></div>
+        <div class="phase"><h3>Bekrefte</h3><p>Test hypoteser og reduser usikkerhet med innsikt, eksperimenter og validering.</p></div>
+        <div class="phase"><h3>Bygge</h3><p>Lever iterativt, mål effekt og prioriter læring og gevinst underveis.</p></div>
+        <div class="phase"><h3>Forvalte</h3><p>Drift, forbedring og aktiv gevinstrealisering etter lansering.</p></div>
+        <div class="phase"><h3>Pensjonere</h3><p>Planlagt utfasing, overføring og kontrollert avslutning av produktet.</p></div>
+      </div>
+      <div class="gate">
+        <span class="pill pill-go">Fortsett</span>
+        <span class="pill pill-adjust">Juster</span>
+        <span class="pill pill-stop">Stopp</span>
+      </div>
+      <p style="margin-top:.45rem;color:var(--muted);font-size:13px;">Mellom hver fase brukes fast beslutningspunkt (gate) med disse tre mulige utfallene.</p>
+    </section>
+
+    <section class="card">
+      <h2>2) Felles produktunderlag (obligatorisk før beslutning)</h2>
+      <ul>
+        <li>Problem og behov</li>
+        <li>Mål og verdi/gevinster</li>
+        <li>Hypoteser og usikkerhet</li>
+        <li>Løsningsretning(er)</li>
+        <li>Kostnader og ressurser</li>
+        <li>Risiko og avhengigheter</li>
+      </ul>
+      <p style="margin-top:.6rem;color:var(--muted);">Krav: punktene skal inneholde refleksjoner, læring og antakelser – ikke bare status.</p>
+    </section>
+
+    <section class="card">
+      <h2>3) Produktgjennomganger (før store beslutninger)</h2>
+      <ul>
+        <li>Tverrfaglig deltagelse</li>
+        <li>Utenfor-blikk fra personer utenfor teamet</li>
+        <li>Fokus på læring og refleksjon, ikke statusrapportering</li>
+      </ul>
+      <div class="agenda">
+        <h3>Standard agenda</h3>
+        <ol>
+          <li>Hva har vi lært?</li>
+          <li>Hva er fortsatt usikkert?</li>
+          <li>Hva anbefaler vi nå: fortsett, juster eller stopp?</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4) Kobling til styring og budsjett</h2>
+      <ul>
+        <li>Budsjett frigjøres trinnvis per fase/gate.</li>
+        <li>Beslutning i gate baseres på underlag og dokumentert læring.</li>
+        <li>Tydelige exit-kriterier reduserer sunk cost og gir felles språk på tvers.</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
